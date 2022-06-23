@@ -101,7 +101,7 @@ while True:
                 for bullet in enPl['bullets']:
                     enemy_player.add_bullet(
                         definitions.RED_LASER_SPRITE, bullet['x'], (bullet['y'] - 50))
-        elif comm_data  and comm_data['isGameOver']:
+        elif comm_data and comm_data['isGameOver']:
             glVars.MESSAGES.append(
                 Message(comm_data['message'], definitions.INFO_MESSAGE))
             if comm_data['isWinner']:

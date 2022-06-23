@@ -68,7 +68,7 @@ while True:
             clients.remove(client)
 
     # If new connection is added => look for a match
-    if is_new_connection_added and connection is not None:
+    if is_new_connection_added and connection:
         while len(clients) >= 2:
             matches.append(Match(clients.pop(0), clients.pop(0)))
             print('Matched!')
@@ -130,7 +130,7 @@ while True:
                     player_two['y'] = definitions.SCREEN_HEIGHT - \
                         (player_two['y'] + definitions.PLAYER_SIZE)
 
-                    if match.player_two_data is None:
+                    if not match.player_two_data:
                         player_two['hp'] = 100
                     else:
                         player_two['hp'] = match.player_two_data['hp']
@@ -142,7 +142,7 @@ while True:
 
                     commData = {}
 
-                    if match.player_one_data is None:
+                    if not match.player_one_data:
                         commData['plHp'] = 100
                     else:
                         commData['plHp'] = match.player_one_data['hp']
