@@ -1,4 +1,3 @@
-# input lib
 from pygame.locals import *
 
 
@@ -7,7 +6,9 @@ class ConfigError(KeyError):
 
 
 class Config:
-    """ A utility for configuration """
+    """
+    A utility for configuration
+    """
 
     def __init__(self, options, *look_for):
         assertions = []
@@ -18,11 +19,14 @@ class Config:
                 exec('self.' + key[0] + ' = ' + key[1])
             assertions.append(key[0])
         for key in options.keys():
-            if key not in assertions: raise ConfigError(key + ' not expected as option')
+            if key not in assertions:
+                raise ConfigError(key + ' not expected as option')
 
 
 class Input:
-    """ A text input for pygame apps """
+    """
+    A text input for pygame apps
+    """
 
     def __init__(self, **options):
         """ Options: x, y, font, color, restricted, maxlength, prompt """
@@ -39,7 +43,6 @@ class Input:
         self.prompt = self.options.prompt
         self.value = ''
         self.shifted = False
-
     def get_value(self):
         return self.value
 
@@ -61,7 +64,8 @@ class Input:
         """ Update the input based on passed events """
         for event in events:
             if event.type == KEYUP:
-                if event.key == K_LSHIFT or event.key == K_RSHIFT: self.shifted = False
+                if event.key == K_LSHIFT or event.key == K_RSHIFT:
+                    self.shifted = False
             if event.type == KEYDOWN:
                 if event.key == K_BACKSPACE:
                     self.value = self.value[:-1]
@@ -71,6 +75,7 @@ class Input:
                     self.value += ' '
                 elif event.key == K_RETURN:
                     return self.get_value()
+                 # Letter mapping   
                 if not self.shifted and len(self.value) < 10:
                     if event.key == K_a and 'a' in self.restricted:
                         self.value += 'a'
@@ -262,4 +267,5 @@ class Input:
                     elif event.key == K_SLASH and '?' in self.restricted:
                         self.value += '?'
 
-        if len(self.value) > self.maxlength >= 0: self.value = self.value[:-1]
+        if len(self.value) > self.maxlength >= 0:
+            self.value = self.value[:-1]

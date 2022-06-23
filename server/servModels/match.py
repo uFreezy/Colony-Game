@@ -2,67 +2,82 @@ import definitions
 
 
 class Match:
+    """
+    Class representation of a single match between two players.
+    """
+
     def __init__(self, player_one, player_two):
-        self.playerOneConn = player_one
-        self.playerTwoConn = player_two
-        self.playerOneData = None
-        self.playerTwoData = None
-        self.lastTick = None
-        self.bulletLog = []
-        self.isActive = True
+        self._player_one_connection = player_one
+        self._player_two_connection = player_two
+        self._player_one_data = None
+        self._player_two_data = None
+        self._last_tick = None
+        self._bullet_log = []
+        self._is_active = True
 
-    def get_player_one_conn(self):
-        return self.playerOneConn
+    @property
+    def player_one_conn(self):
+        return self._player_one_connection
 
-    def get_player_two_conn(self):
-        return self.playerTwoConn
+    @property
+    def player_two_conn(self):
+        return self._player_two_connection
 
-    def get_player_one_data(self):
-        return self.playerOneData
+    @property
+    def player_one_data(self):
+        return self._player_one_data
 
-    def get_player_two_data(self):
-        return self.playerTwoData
-
-    def set_player_one_data(self, pl_data):
-        if self.playerOneData is None:
-            self.playerOneData = pl_data
-            self.playerOneData['hp'] = 100
+    @player_one_data.setter
+    def player_one_data(self, pl_data):
+        if not self._player_one_data:
+            self._player_one_data = pl_data
+            self._player_one_data['hp'] = 100
             return
-        self.playerOneData['x'] = pl_data['x']
-        self.playerOneData['y'] = pl_data['y']
-        self.playerOneData['hp'] = pl_data['hp']
+        self._player_one_data['x'] = pl_data['x']
+        self._player_one_data['y'] = pl_data['y']
+        self._player_one_data['hp'] = pl_data['hp']
 
-        self.__bullet_append(pl_data['bullets'], self.playerOneData)
+        self.__bullet_append(pl_data['bullets'], self._player_one_data)
 
-    def set_player_two_data(self, pl_data):
-        if self.playerTwoData is None:
-            self.playerTwoData = pl_data
-            self.playerTwoData['hp'] = 100
+    @property
+    def player_two_data(self):
+        return self._player_two_data
+
+    @player_two_data.setter
+    def player_two_data(self, pl_data):
+        if not self._player_two_data:
+            self._player_two_data = pl_data
+            self._player_two_data['hp'] = 100
             return
 
-        self.playerTwoData['x'] = pl_data['x']
-        self.playerTwoData['y'] = pl_data['y']
+        self._player_two_data['x'] = pl_data['x']
+        self._player_two_data['y'] = pl_data['y']
 
-        self.playerTwoData['hp'] = pl_data['hp']
+        self._player_two_data['hp'] = pl_data['hp']
 
-        self.__bullet_append(pl_data['bullets'], self.playerTwoData)
+        self.__bullet_append(pl_data['bullets'], self._player_two_data)
 
-    def get_last_tick(self):
-        return self.lastTick
+    @property
+    def last_tick(self):
+        return self._last_tick
 
-    def set_last_tick(self, tick_date):
-        self.lastTick = tick_date
+    @last_tick.setter
+    def last_tick(self, tick_date):
+        self._last_tick = tick_date
 
-    def get_is_active(self):
-        return self.isActive
+    @property
+    def is_active(self):
+        return self._is_active
 
-    def set_is_active(self, is_active):
-        self.isActive = is_active
+    @is_active.setter
+    def is_active(self, is_active):
+        self._is_active = is_active
 
-    # TODO: Fix
     def are_active_bullets(self):
-        is_pl_one_bull = self.playerOneData['bullets'] is not None and len(self.playerOneData['bullets']) > 0
-        is_pl_two_bull = self.playerTwoData['bullets'] is not None and len(self.playerTwoData['bullets']) > 0
+        is_pl_one_bull = self._player_one_data['bullets'] and any(
+            self._player_one_data['bullets'])
+        is_pl_two_bull = self._player_two_data['bullets'] and any(
+            self._player_two_data['bullets'])
 
         return is_pl_one_bull and is_pl_two_bull
 
@@ -73,37 +88,40 @@ class Match:
             if bull['y'] <= -30 or bull['y'] > definitions.SCREEN_HEIGHT + 54:
                 bullets.remove(bull)
 
-    # TODO: Simplify
     def __bullet_append(self, bullets, player):
-        if bullets is not None:
+        if bullets:
             for bul in bullets:
                 does_exist = False
                 for exBull in player['bullets']:
                     if exBull['id'] == bul['id']:
                         does_exist = True
-                if not does_exist and bul['id'] not in self.bulletLog:
+                if not does_exist and bul['id'] not in self._bullet_log:
                     player['bullets'].append(bul)
-                    self.bulletLog.append(bul['id'])
+                    self._bullet_log.append(bul['id'])
 
-    # Moves bullets serverside
     def bullet_flow(self):
-        if self.playerOneData['bullets'] is not None:
-            for bul in self.playerOneData['bullets']:
+        """
+        Moves bullets serverside
+        """
+        if self._player_one_data['bullets']:
+            for bul in self._player_one_data['bullets']:
                 bul['y'] = bul['y'] - definitions.BULLET_SPEED
 
-        if self.playerTwoData['bullets'] is not None:
-            for bul in self.playerTwoData['bullets']:
+        if self._player_two_data['bullets']:
+            for bul in self._player_two_data['bullets']:
                 bul['y'] = bul['y'] - definitions.BULLET_SPEED
 
-        self.__bullet_trim(self.playerOneData['bullets'])
-        self.__bullet_trim(self.playerTwoData['bullets'])
+        self.__bullet_trim(self._player_one_data['bullets'])
+        self.__bullet_trim(self._player_two_data['bullets'])
 
-    # Removes bullet from player per given id
     def remove_bullet(self, bullet_id):
-        for bul in self.playerOneData['bullets']:
+        """
+        Removes bullet from player per given id
+        """
+        for bul in self._player_one_data['bullets']:
             if bullet_id == bul['id']:
-                self.playerOneData['bullets'].remove(bul)
+                self._player_one_data['bullets'].remove(bul)
                 return
-        for bul in self.playerTwoData['bullets']:
+        for bul in self._player_two_data['bullets']:
             if bullet_id == bul['id']:
-                self.playerTwoData['bullets'].remove(bul)
+                self._player_two_data['bullets'].remove(bul)

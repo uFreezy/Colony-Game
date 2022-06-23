@@ -1,38 +1,44 @@
-import pygame
-
-import definitions
-
 from random import choice
 from string import ascii_uppercase
 
+import pygame
+import definitions
+
 
 class Projectile(pygame.sprite.Sprite):
+    """
+    Class representation of the projectiles that the players shoot
+    """
+
     def __init__(self, sprite_uri, is_enemy, pos_x, pos_y):
         pygame.sprite.Sprite.__init__(self)
 
-        self.id = ''.join(choice(ascii_uppercase) for i in range(12))
-
-        self.image = pygame.image.load(sprite_uri)
-        self.image = pygame.transform.scale(self.image, (9, 54))
-
-        self.posX = pos_x
-        self.posY = pos_y
-        self.damage = definitions.BULLET_DAMAGE
+        self._id = ''.join(choice(ascii_uppercase) for _ in range(12))
+        self._image = pygame.image.load(sprite_uri)
+        self._image = pygame.transform.scale(self._image, (9, 54))
+        self._pos_x = pos_x
+        self._pos_y = pos_y
+        self._damage = definitions.BULLET_DAMAGE
 
         if is_enemy:
-            self.image = pygame.transform.flip(self.image, False, True)
+            self._image = pygame.transform.flip(self._image, False, True)
 
-    def get_id(self):
-        return self.id
+    @property
+    def id(self):
+        return self._id
 
-    def get_image(self):
-        return self.image
+    @property
+    def image(self):
+        return self._image
 
-    def get_x(self):
-        return self.posX
+    @property
+    def x(self):
+        return self._pos_x
 
-    def get_y(self):
-        return self.posY
+    @property
+    def y(self):
+        return self._pos_y
 
-    def set_y(self, y):
-        self.posY = y
+    @y.setter
+    def y(self, y):
+        self._pos_y = y
