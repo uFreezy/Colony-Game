@@ -22,7 +22,8 @@ def socket_init():
 
         return soc
     except ConnectionRefusedError:
-        glVars.messages.append(Message(definitions.CONN_REFUSED, definitions.ERROR_MESSAGE))
+        glVars.messages.append(
+            Message(definitions.CONN_REFUSED, definitions.ERROR_MESSAGE))
         glVars.isServerActive = False
 
     return None
@@ -45,7 +46,8 @@ def parse_socket_data(soc):
     except pickle.UnpicklingError:
         return None
     except ConnectionResetError:
-        MESSAGES.append(Message(definitions.CONN_REFUSED, definitions.ERROR_MESSAGE))
+        MESSAGES.append(Message(definitions.CONN_REFUSED,
+                        definitions.ERROR_MESSAGE))
 
     return None
 
@@ -59,8 +61,10 @@ def send_data(soc, data):
     except BlockingIOError:
         pass
     except AttributeError:
-        MESSAGES.append(Message(definitions.SERVER_INACTIVE, definitions.ERROR_MESSAGE))
+        MESSAGES.append(Message(definitions.SERVER_INACTIVE,
+                        definitions.ERROR_MESSAGE))
         glVars.isServerActive = False
     except BrokenPipeError:
-        MESSAGES.append(Message(definitions.GAME_CRASHED, definitions.ERROR_MESSAGE))
+        MESSAGES.append(Message(definitions.GAME_CRASHED,
+                        definitions.ERROR_MESSAGE))
         glVars.isServerActives = False

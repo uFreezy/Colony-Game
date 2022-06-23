@@ -136,4 +136,4 @@ while True:
             drawUtils.draw_obj(screen, bullet)
             
     pygame.display.update()
-    clock.tick(30)
+    clock.tick(120)
