@@ -1,101 +1,132 @@
+import time
 import pygame
 import definitions
-import time
+
 from models.projectile import Projectile
 
 
 class Player(pygame.sprite.Sprite):
+    """
+    Class representation of the player in the game.
+    """
+
     def __init__(self, sprite_uri, is_enemy, pos_x, pos_y):
         pygame.sprite.Sprite.__init__(self)
 
-        self.username = ""
-        self.isEnemy = is_enemy
-        self.image = pygame.image.load(sprite_uri)
-        self.image = pygame.transform.scale(self.image, (definitions.PLAYER_SIZE, definitions.PLAYER_SIZE))
-        self.posX = pos_x
-        self.posY = pos_y
-        self.hp = 100  # TODO: put the starter HP in a const
-        self.shootStamp = time.time()
+        self._username = ""
+        self._is_enemy = is_enemy
+        self._image = pygame.image.load(sprite_uri)
+        self._image = pygame.transform.scale(
+            self._image, (definitions.PLAYER_SIZE, definitions.PLAYER_SIZE))
+        self._x = pos_x
+        self._y = pos_y
+        self._hp = 100
+        self._shoot_stamp = time.time()
 
-        self.bullets = []
+        self._bullets = []
 
-        if self.isEnemy:
-            self.image = pygame.transform.flip(self.image, False, True)
+        if self._is_enemy:
+            self._image = pygame.transform.flip(self._image, False, True)
 
-        # TODO: firerate  *serverside too*
+        self._rect = self._image.get_rect()
 
-        self.rect = self.image.get_rect()
+    @property
+    def image(self):
+        return self._image
 
-    def get_image(self):
-        return self.image
-
-    def set_image(self, image):
+    @image.setter
+    def image(self, image):
         self.image = image
 
-    def get_rect(self):
-        return self.rect
+    @property
+    def rect(self):
+        return self._rect
 
-    def get_username(self):
-        if self.username:
-            return self.username
-        else:
-            return ""
+    @property
+    def username(self):
+        if self._username:
+            return self._username
+        return None
 
-    def set_username(self, username):
-        self.username = username
+    @username.setter
+    def username(self, username):
+        self._username = username
 
-    def get_x(self):
-        return self.posX
+    @property
+    def x(self):
+        return self._x
 
-    def get_y(self):
-        return self.posY
+    @x.setter
+    def x(self, x):
+        self._x = x
 
-    def get_bullets(self):
-        return self.bullets
+    @property
+    def y(self):
+        return self._y
 
-    # ???
+    @y.setter
+    def y(self, y):
+        self._y = y
+
+    @property
+    def hp(self):
+        return self._hp
+
+    @hp.setter
+    def hp(self, hp):
+        self._hp = hp
+
+    @property
+    def bullets(self):
+        return self._bullets
+
+    @bullets.setter
+    def bullets(self, bullets):
+        self._bullets = bullets
+
     def add_bullet(self, sprite_uri, x, y):
-        self.bullets.append(Projectile(sprite_uri, self.isEnemy, x, y))
-        # TODO: Propagate the bullet addition to the server
+        self._bullets.append(Projectile(sprite_uri, self._is_enemy, x, y))
 
     def clear_bullets(self):
-        self.bullets = []
+        self._bullets = []
 
     def shoot(self):
         self.add_bullet(definitions.BLUE_LASER_SPRITE,
-                        self.get_x(), self.get_y() - 50)
+                        self.x, self.y - 50)
 
     def handle_input(self, input_keys):
-        if input_keys[pygame.K_UP] == 1 and self.posY > 0:
-            self.posY -= definitions.MOVEMENT_SPEED
-        if input_keys[pygame.K_DOWN] == 1 and self.posY < definitions.SCREEN_HEIGHT - definitions.PLAYER_SIZE:
-            self.posY += definitions.MOVEMENT_SPEED
-        if input_keys[pygame.K_LEFT] == 1 and self.posX > 0:
-            self.posX -= definitions.MOVEMENT_SPEED
-        if input_keys[pygame.K_RIGHT] == 1 and self.posX < definitions.SCREEN_WIDTH - definitions.PLAYER_SIZE:
-            self.posX += definitions.MOVEMENT_SPEED
-        if input_keys[pygame.K_SPACE] == 1 and time.time() - self.shootStamp >= definitions.FIRE_RATE:
-            self.shootStamp = time.time()
+        if input_keys[pygame.K_UP] == 1 and self._y > 0:
+            self._y -= definitions.MOVEMENT_SPEED
+        if input_keys[pygame.K_DOWN] == 1 and self._y < definitions.SCREEN_HEIGHT - definitions.PLAYER_SIZE:
+            self._y += definitions.MOVEMENT_SPEED
+        if input_keys[pygame.K_LEFT] == 1 and self._x > 0:
+            self._x -= definitions.MOVEMENT_SPEED
+        if input_keys[pygame.K_RIGHT] == 1 and self._x < definitions.SCREEN_WIDTH - definitions.PLAYER_SIZE:
+            self._x += definitions.MOVEMENT_SPEED
+        if input_keys[pygame.K_SPACE] == 1 and time.time() - self._shoot_stamp >= definitions.FIRE_RATE:
+            self._shoot_stamp = time.time()
             self.shoot()
 
-        # TODO: Send socket event that input is present to the server
+        return self.rect.move(self._x, self._y)
 
-        return self.get_rect().move(self.posX, self.posY)
-
-    # Used for updating the UI of player's child components
     def tick(self):
-        bullets = self.get_bullets()
-        for bul in bullets:
-            if self.isEnemy:
-                bul.set_y(bul.get_y() + definitions.BULLET_SPEED)
+        """
+        Used for updating the UI of player's child components
+        """
+        _bullets = self.bullets
+        for bul in _bullets:
+            if self._is_enemy:
+                bul.y = bul.y + definitions.BULLET_SPEED
             else:
-                bul.set_y(bul.get_y() - definitions.BULLET_SPEED)
-            if bul.get_y() <= -30 or bul.get_y() > definitions.SCREEN_HEIGHT + 54:
-                self.bullets.remove(bul)
+                bul.y = bul.y - definitions.BULLET_SPEED
+            if bul.y <= -30 or bul.y > definitions.SCREEN_HEIGHT + 54:
+                self._bullets.remove(bul)
 
-    def get_player_info(self):
-        plr = {'username': self.username, 'x': self.posX, 'y': self.posY, 'bullets': []}
-        for bull in self.bullets:
-            plr['bullets'].append({'id': bull.get_id(), 'x': bull.get_x(), 'y': bull.get_y()})
+    def player_info(self):
+        plr = {'username': self.username, 'x': self._x,
+               'y': self._y, 'bullets': []}
+        for bull in self._bullets:
+            plr['bullets'].append(
+                {'id': bull.id, 'x': bull.x, 'y': bull.y})
 
         return plr

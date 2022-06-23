@@ -1,11 +1,15 @@
+"""
+Game server run file.
+"""
 import copy
 import pickle
 import socket
 
 import time
 from io import BlockingIOError
-import utils.gameUtils as gameUtils
 from servModels.match import Match
+from utils import game_utils
+
 
 import definitions
 
@@ -18,25 +22,26 @@ socket_obj.setblocking(0)
 
 clients = []
 matches = []
-lastCheck = None
+last_check = None
 
 print('Welcome to colony game server!')
 
 
 def game_over():
-    go_obj = {'isGameOver': True, 'isWinner': True, 'message': "You won! Game Over!"}
+    go_obj = {'isGameOver': True, 'isWinner': True,
+              'message': "You won! Game Over!"}
 
     try:
-        if match.get_player_one_data()['hp'] > 0:
-            match.get_player_one_conn().send(pickle.dumps(go_obj))
+        if match.player_one_data['hp'] > 0:
+            match.player_one_conn.send(pickle.dumps(go_obj))
             go_obj['message'] = 'You lost! Game Over!'
             go_obj['isWinner'] = False
-            match.get_player_two_conn().send(pickle.dumps(go_obj))
-        elif match.get_player_two_data()['hp'] > 0:
-            match.get_player_two_conn().send(pickle.dumps(go_obj))
+            match.player_two_conn.send(pickle.dumps(go_obj))
+        elif match.player_two_data['hp'] > 0:
+            match.player_two_conn.send(pickle.dumps(go_obj))
             go_obj['message'] = 'You lost! Game Over!'
             go_obj['isWinner'] = False
-            match.get_player_one_conn().send(pickle.dumps(go_obj))
+            match.player_one_conn.send(pickle.dumps(go_obj))
     except (BlockingIOError, BrokenPipeError):
         pass
 
@@ -44,132 +49,130 @@ def game_over():
 # Listens for client connection
 socket_obj.listen(5)
 while True:
-    isNewConnAdded = False
+    is_new_connection_added = False
 
-    conn = None
-    addr = None
+    connection = None
+    address = None
     try:
         # Establish connection with client.
-        conn, addr = socket_obj.accept()
-        clients.append(conn)
-        isNewConnAdded = True
-        print('Got connection from ', addr)
+        connection, address = socket_obj.accept()
+        clients.append(connection)
+        is_new_connection_added = True
+        print('Got connection from ', address)
     except BlockingIOError:
         pass
 
-    # Check the user conn status
+    # Check the user connection status
     for client in clients:
-        if gameUtils.is_user_connected(client) is not True:
+        if game_utils.is_user_connected(client) is not True:
             clients.remove(client)
 
     # If new connection is added => look for a match
-    if isNewConnAdded and conn is not None:
+    if is_new_connection_added and connection is not None:
         while len(clients) >= 2:
             matches.append(Match(clients.pop(0), clients.pop(0)))
             print('Matched!')
 
     for match in matches:
-        if match.get_is_active():
-            plOneByte = None
-            plTwoByte = None
+        if match.is_active:
+            player_one_bytes = None
+            player_two_bytes = None
 
-            if gameUtils.is_user_connected(match.get_player_one_conn()) is not True:
-                gameUtils.end_game_disconnect(matches, match)
-            elif gameUtils.is_user_connected(match.get_player_one_conn()) is not True:
-                gameUtils.end_game_disconnect(matches, match)
+            if not game_utils.is_user_connected(match.player_one_conn) or not game_utils.is_user_connected(match.player_two_conn):
+                game_utils.end_game_disconnect(matches, match)
 
             try:
-                # TODO: Socket receiving to be done in a separate  method
                 try:
-                    plOneByte = match.get_player_one_conn().recv(4096)
+                    player_one_bytes = match.player_one_conn.recv(4096)
                 except BlockingIOError:
                     pass
                 try:
-                    plTwoByte = match.get_player_two_conn().recv(4096)
+                    player_two_bytes = match.player_two_conn.recv(4096)
                 except BlockingIOError:
                     pass
 
-                plOne = None
-                plTwo = None
-                if plOneByte is not None:
-                    plOne = pickle.loads(plOneByte)
+                player_one = None
+                player_two = None
+                if player_one_bytes:
+                    player_one = pickle.loads(player_one_bytes)
 
-                    # TODO: Do it in the match object
-                    plOne['y'] = definitions.SCREEN_HEIGHT - (plOne['y'] + definitions.PLAYER_SIZE)
+                    player_one['y'] = definitions.SCREEN_HEIGHT - \
+                        (player_one['y'] + definitions.PLAYER_SIZE)
 
                     # If this is the first time setting data
                     # => put the player's hp = maxHp
-                    if match.get_player_one_data() is None:
-                        plOne['hp'] = 100
+                    if match.player_one_data is None:
+                        player_one['hp'] = 100
                     else:
-                        plOne['hp'] = match.get_player_one_data()['hp']
+                        player_one['hp'] = match.player_one_data['hp']
 
-                    match.set_player_one_data(copy.deepcopy(plOne))
+                    match.player_one_data = copy.deepcopy(player_one)
 
-                    if plOne['bullets']:
-                        for bul in plOne['bullets']:
+                    if player_one['bullets']:
+                        for bul in player_one['bullets']:
                             bul['y'] = definitions.SCREEN_HEIGHT - bul['y']
 
                     # We create comm obj containing player's own hp
                     # and enemy data.
                     commData = {}
-                    if match.get_player_two_data() is None:
+                    if match.player_one_data is None:
                         commData['plHp'] = 100
                     else:
-                        commData['plHp'] = match.get_player_two_data()['hp']
+                        commData['plHp'] = match.player_one_data['hp']
 
-                    plOne['hp'] = match.get_player_one_data()['hp']
-                    commData['enemyObj'] = plOne
+                    player_one['hp'] = match.player_one_data['hp']
+                    commData['enemyObj'] = player_one
 
-                    match.get_player_two_conn().send(pickle.dumps(commData))
+                    match.player_two_conn.send(pickle.dumps(commData))
 
-                if plTwoByte is not None:
-                    plTwo = pickle.loads(plTwoByte)
-                    plTwo['y'] = definitions.SCREEN_HEIGHT - (plTwo['y'] + definitions.PLAYER_SIZE)
+                if player_two_bytes:
+                    player_two = pickle.loads(player_two_bytes)
+                    player_two['y'] = definitions.SCREEN_HEIGHT - \
+                        (player_two['y'] + definitions.PLAYER_SIZE)
 
-                    # TODO: Temporay solution! Improve!
-
-                    if match.get_player_two_data() is None:
-                        plTwo['hp'] = 100
+                    if match.player_two_data is None:
+                        player_two['hp'] = 100
                     else:
-                        plTwo['hp'] = match.get_player_two_data()['hp']
-                    match.set_player_two_data(copy.deepcopy(plTwo))
+                        player_two['hp'] = match.player_two_data['hp']
+                    match.player_two_data = copy.deepcopy(player_two)
 
-                    if plTwo['bullets']:
-                        for bul in plTwo['bullets']:
+                    if player_two['bullets']:
+                        for bul in player_two['bullets']:
                             bul['y'] = definitions.SCREEN_HEIGHT - bul['y']
 
                     commData = {}
 
-                    if match.get_player_one_data() is None:
+                    if match.player_one_data is None:
                         commData['plHp'] = 100
                     else:
-                        commData['plHp'] = match.get_player_one_data()['hp']
+                        commData['plHp'] = match.player_one_data['hp']
 
-                    plTwo['hp'] = match.get_player_two_data()['hp']
-                    commData['enemyObj'] = plTwo
+                    player_two['hp'] = match.player_two_data['hp']
+                    commData['enemyObj'] = player_two
 
-                    match.get_player_one_conn().send(pickle.dumps(commData))
+                    match.player_one_conn.send(pickle.dumps(commData))
 
                 # Bullet flow
-                isData = match.get_player_one_data() is not None and match.get_player_two_data() is not None
-                if isData and (match.get_last_tick() is None or time.time() - match.get_last_tick() > 0.035):
+                isData = match.player_one_data and match.player_two_data
+
+                if isData and (match.last_tick is None or time.time() - match.last_tick > 0.035):
                     match.bullet_flow()
-                    match.set_last_tick(time.time())
+                    match.last_tick = time.time()
 
                 # Collision Check
                 if isData:
-                    afterCollPlData = gameUtils.collision_detec(match)
-                    match.set_player_one_data(afterCollPlData[0])
-                    match.set_player_two_data(afterCollPlData[1])
+                    afterCollPlData = game_utils.collision_detect(match)
+                    match.player_one_data = afterCollPlData[0]
+                    match.player_two_data = afterCollPlData[1]
 
                 # When one of the players looses the game we make the match inactive
                 # and stop processing the match's data but we still propagate the
                 # last known data to the players for a while
-                if isData and (match.get_player_one_data()['hp'] == 0 or match.get_player_two_data()['hp'] == 0):
-                    match.set_is_active(False)
+
+                if isData and (match.player_one_data['hp'] <= 0 or match.player_one_data['hp'] <= 0):
+                    match.is_active = False
                     game_over()
             except (EOFError, OSError):
-                gameUtils.end_game_disconnect(matches, match)
+                game_utils.end_game_disconnect(matches, match)
         else:
             game_over()

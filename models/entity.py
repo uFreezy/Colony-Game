@@ -1,6 +1,14 @@
-class Entity:
-    def __init__(self, sprite_uri):
-        self.spriteUri = sprite_uri
+from abc import ABC
 
-    def get_sprite_uri(self):
-        return self.spriteUri
+
+class Entity(ABC):
+    """
+    Class representation of abstract entity.
+    """
+
+    def __init__(self, sprite_uri):
+        self._sprite_uri = sprite_uri
+
+    @property
+    def sprite_uri(self):
+        return self._sprite_uri

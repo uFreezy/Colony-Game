@@ -1,3 +1,6 @@
+"""
+Server constants
+"""
 SCREEN_HEIGHT = 480
 SCREEN_WIDTH = 640
 BULLET_SPEED = 5
